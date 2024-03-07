@@ -6,7 +6,7 @@ from .client import Client
 from .lib.exception import CheckExceptions
 from .local import Local
 
-version = "2.5.5"
+version = "2.5.7"
 newest = get("https://pypi.org/pypi/samino/json").json()["info"]["version"]
 
 if version != newest:
