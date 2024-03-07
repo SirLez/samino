@@ -47,18 +47,24 @@ class Session(Headers):
         self.sidInit()
 
     def postRequest(self, url: str, data: Union[str, dict, BinaryIO, bytes] = None, newHeaders: dict = None,
-                    webRequest: bool = False, minify: bool = False):
+                    webRequest: bool = False, minify: bool = False, deviceId: str = None):
         if newHeaders: self.app_headers.update(newHeaders)
 
-        if not isinstance(data, (str, BinaryIO, bytes)):
+        if isinstance(data, dict):
             data = json_minify(dumps(data)) if minify else dumps(data)
+            head = self.updateHeaders(data=data, sid=self.sid)
+        elif isinstance(data, BinaryIO):
+            head = self.updateHeaders(data=data, sid=self.sid)
+        else:
+            head = self.updateHeaders(data=None, sid=self.sid)
 
         req = self.session.post(
             url=webApi(url) if webRequest else api(url),
-            data=data if isinstance(data, str) else None,
+            data=data,
             files={"file": data} if isinstance(data, BinaryIO) else None,
-            headers=self.web_headers if webRequest else self.updateHeaders(data=data, sid=self.sid)
+            headers=head
         )
+        if newHeaders: self.app_headers.pop("content-length")
         return CheckExceptions(req.json()) if req.status_code != 200 else req.json()
 
     def getRequest(self, url: str):
