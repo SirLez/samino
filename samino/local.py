@@ -3,7 +3,7 @@ from base64 import b64encode
 from binascii import hexlify
 from time import time as timestamp
 from time import timezone as timezones
-from typing import Union, BinaryIO, Optional
+from typing import Union, BinaryIO
 from uuid import UUID
 
 from .lib.objects import *
@@ -130,7 +130,7 @@ class Local(Session):
         return UserProfileList(req["userProfileList"]).UserProfileList
 
     def get_public_chats(
-        self, filterType: str = "recommended", start: int = 0, size: int = 50
+            self, filterType: str = "recommended", start: int = 0, size: int = 50
     ):
         req = self.getRequest(
             f"/x{self.comId}/s/chat/thread?type=public-all&filterType={filterType}&start={start}&size={size}"
@@ -226,12 +226,12 @@ class Local(Session):
         return Json(req)
 
     def send_web_message(
-        self,
-        chatId: str,
-        message: str = None,
-        messageType: int = 0,
-        icon: str = None,
-        comId: str = None,
+            self,
+            chatId: str,
+            message: str = None,
+            messageType: int = 0,
+            icon: str = None,
+            comId: str = None,
     ):
         if comId:
             self.comId = comId
@@ -277,12 +277,12 @@ class Local(Session):
         return Json(req)
 
     def start_chat(
-        self,
-        userId: Union[str, list],
-        title: str = None,
-        message: str = None,
-        content: str = None,
-        chatType: int = 0,
+            self,
+            userId: Union[str, list],
+            title: str = None,
+            message: str = None,
+            content: str = None,
+            chatType: int = 0,
     ):
         if isinstance(userId, str):
             userId = [userId]
@@ -336,7 +336,7 @@ class Local(Session):
         if nickname:
             data["nickname"] = nickname
         if icon:
-            data["icon"] = self.upload_media(icon, "image")
+            data["icon"] = icon
         if defaultBubbleId:
             data["extensions"]["defaultBubbleId"] = defaultBubbleId
         if backgroundColor:
@@ -347,117 +347,66 @@ class Local(Session):
         req = self.postRequest(f"/x{self.comId}/s/user-profile/{self.uid}", data)
         return Json(req)
 
-    def edit_chat(
-        self,
-        chatId: str,
-        title: str = None,
-        content: str = None,
-        icon: str = None,
-        background: str = None,
-        keywords: list = None,
-        announcement: str = None,
-        pinAnnouncement: bool = None,
-    ):
-        res, data = [], {"timestamp": int(timestamp() * 1000)}
+    def edit_chat(self, chatId: str, doNotDisturb: bool = None, pinChat: bool = None, title: str = None,
+                  icon: str = None, backgroundImage: str = None, content: str = None, announcement: str = None,
+                  coHosts: list = None, keywords: list = None, pinAnnouncement: bool = None,
+                  publishToGlobal: bool = None, canTip: bool = None, viewOnly: bool = None, canInvite: bool = None,
+                  fansOnly: bool = None):
+        data = {"timestamp": int(timestamp() * 1000)}
 
-        if title:
-            data["title"] = title
-        if content:
-            data["content"] = content
-        if icon:
-            data["icon"] = icon
-        if keywords:
-            data["keywords"] = keywords
-        if announcement:
-            data["extensions"]["announcement"] = announcement
-        if pinAnnouncement:
-            data["extensions"]["pinAnnouncement"] = pinAnnouncement
-        if background:
-            data = {
-                "media": [100, background, None],
-                "timestamp": int(timestamp() * 1000),
-            }
-            req = self.postRequest(
-                f"/x{self.comId}/s/chat/thread/{chatId}/member/{self.uid}/background",
-                data,
-            )
-            res.append(Json(req))
+        if title: data["title"] = title
+        if content: data["content"] = content
+        if icon: data["icon"] = icon
+        if keywords: data["keywords"] = keywords
+        if announcement: data["extensions"] = {"announcement": announcement}
+        if pinAnnouncement: data["extensions"] = {"pinAnnouncement": pinAnnouncement}
+        if fansOnly: data["extensions"] = {"fansOnly": fansOnly}
 
-        req = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}", data)
-        res.append(Json(req))
+        if publishToGlobal is not None:
+            data["publishToGlobal"] = 0 if publishToGlobal else 1
 
-        return res
-
-    def chat_settings(
-        self,
-        chatId: str,
-        viewOnly: bool = False,
-        doNotDisturb: bool = True,
-        canInvite: bool = False,
-        canTip: bool = None,
-        pin: bool = None,
-        coHosts: Union[str, list] = None,
-    ):
         res = []
 
-        if doNotDisturb:
-            if doNotDisturb:
-                opt = 2
-            else:
-                opt = 1
+        if doNotDisturb is not None:
+            data["alertOption"] = 2 if doNotDisturb else 1
+            response = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}/member/{self.uid}/alert", data=data)
+            res.append(Json(response))
 
-            data = {"alertOption": opt, "timestamp": int(timestamp() * 1000)}
-            req = self.postRequest(
-                f"/x{self.comId}/s/chat/thread/{chatId}/member/{self.uid}/alert", data
-            )
-            res.append(Json(req))
+        if pinChat is not None:
+            response = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}/{'pin' if pinChat else 'unpin'}",
+                                        data=data)
+            res.append(Json(response))
 
-        if viewOnly:
-            if viewOnly:
-                viewOnly = "enable"
-            else:
-                viewOnly = "disable"
+        if backgroundImage is not None:
+            data = {"media": [100, backgroundImage, None], "timestamp": int(timestamp() * 1000)}
+            response = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}/member/{self.uid}/background",
+                                        data=data)
+            res.append(Json(response))
 
-            req = self.postRequest(
-                f"/x{self.comId}/s/chat/thread/{chatId}/view-only/{viewOnly}"
-            )
-            res.append(Json(req))
-
-        if canInvite:
-            if canInvite:
-                canInvite = "enable"
-            else:
-                canInvite = "disable"
-
-            req = self.postRequest(
-                f"/x{self.comId}/s/chat/thread/{chatId}/members-can-invite/{canInvite}"
-            )
-            res.append(Json(req))
-
-        if canTip:
-            if canTip:
-                canTip = "enable"
-            else:
-                canTip = "disable"
-            req = self.postRequest(
-                f"/x{self.comId}/s/chat/thread/{chatId}/tipping-perm-status/{canTip}"
-            )
-            res.append(Json(req))
-
-        if pin:
-            if pin:
-                pin = "pin"
-            else:
-                pin = "unpin"
-
-            req = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}/{pin}")
-            res.append(Json(req))
-
-        if coHosts:
+        if coHosts is not None:
             data = {"uidList": coHosts, "timestamp": int(timestamp() * 1000)}
-            req = self.postRequest(f"{self.comId}/s/chat/thread/{chatId}/co-host", data)
-            res.append(Json(req))
+            response = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}/co-host", data=data)
+            res.append(Json(response))
 
+        if viewOnly is not None:
+            response = self.postRequest(
+                f"/x{self.comId}/s/chat/thread/{chatId}/{'view-only/enable' if viewOnly else 'view-only/disable'}")
+            res.append(Json(response))
+
+        if canInvite is not None:
+            response = self.postRequest(
+                f"/x{self.comId}/s/chat/thread/{chatId}/{'members-can-invite/enable' if canInvite else 'members-can-invite/disable'}",
+                data=data)
+            res.append(Json(response))
+
+        if canTip is not None:
+            response = self.postRequest(
+                f"/x{self.comId}/s/chat/thread/{chatId}/{'tipping-perm-status/enable' if canTip else 'tipping-perm-status/disable'}",
+                data=data)
+            res.append(Json(response))
+
+        response = self.postRequest(f"/x{self.comId}/s/chat/thread/{chatId}", data=data)
+        res.append(Json(response))
         return res
 
     def like_blog(self, blogId: str = None, wikiId: str = None):
@@ -498,9 +447,9 @@ class Local(Session):
         return Json(req)
 
     def like_comment(
-        self, commentId: str, blogId: str = None, wikiId: str = None, userId: str = None
+            self, commentId: str, blogId: str = None, wikiId: str = None, userId: str = None
     ):
-        data = {"value": 1}
+        data = {"value": 2, "timestamp": int(timestamp() * 1000)}
 
         if blogId:
             data["eventSource"] = "PostDetailView"
@@ -518,7 +467,7 @@ class Local(Session):
         return Json(req)
 
     def unlike_comment(
-        self, commentId: str, blogId: str = None, wikiId: str = None, userId: str = None
+            self, commentId: str, blogId: str = None, wikiId: str = None, userId: str = None
     ):
         if blogId:
             link = f"/x{self.comId}/s/blog/{blogId}/comment/{commentId}/g-vote?eventSource=PostDetailView"
@@ -533,15 +482,25 @@ class Local(Session):
         return Json(req)
 
     def comment(
-        self,
-        comment: str,
-        userId: str = None,
-        blogId: str = None,
-        wikiId: str = None,
-        replyTo: str = None,
-        isGuest: bool = False,
+            self,
+            comment: str,
+            userId: str = None,
+            blogId: str = None,
+            wikiId: str = None,
+            replyTo: str = None,
+            isGuest: bool = False,
     ):
-        data = {"content": comment, "timestamp": int(timestamp() * 1000)}
+        data = {
+            "content": comment,
+            "mediaList": [
+                [100, "http://pm1.aminoapps.com/8942/d13bb2c101efa029a47d3ff8f0dcf5bd4f4c3e45r1-108-108v2_00", None,
+                 None, None, 1]
+            ],
+            "stickerId": None,
+            "type": 0,
+            "eventSource": "PostDetailView",
+            "timestamp": int(timestamp() * 1000)
+        }
 
         if replyTo:
             data["respondTo"] = replyTo
@@ -563,7 +522,7 @@ class Local(Session):
         return Json(req)
 
     def delete_comment(
-        self, commentId: str, userId: str = None, blogId: str = None, wikiId: str = None
+            self, commentId: str, userId: str = None, blogId: str = None, wikiId: str = None
     ):
         if userId:
             link = f"/x{self.comId}/s/user-profile/{userId}/comment/{commentId}"
@@ -578,14 +537,14 @@ class Local(Session):
         return Json(req)
 
     def edit_comment(
-        self,
-        commentId: str,
-        comment: str,
-        userId: str = None,
-        blogId: str = None,
-        wikiId: str = None,
-        replyTo: str = None,
-        isGuest: bool = False,
+            self,
+            commentId: str,
+            comment: str,
+            userId: str = None,
+            blogId: str = None,
+            wikiId: str = None,
+            replyTo: str = None,
+            isGuest: bool = False,
     ):
         data = {"content": comment, "timestamp": int(timestamp() * 1000)}
         if replyTo:
@@ -608,12 +567,12 @@ class Local(Session):
         return Comment(req).Comments
 
     def get_comment_info(
-        self,
-        commentId: str,
-        userId: str = None,
-        blogId: str = None,
-        wikiId: str = None,
-        isGuest: bool = False,
+            self,
+            commentId: str,
+            userId: str = None,
+            blogId: str = None,
+            wikiId: str = None,
+            isGuest: bool = False,
     ):
         if isGuest:
             comType = "g-comment"
@@ -633,7 +592,7 @@ class Local(Session):
         return Comment(req).Comments
 
     def get_wall_comments(
-        self, userId: str, sorting: str = "newest", start: int = 0, size: int = 25
+            self, userId: str, sorting: str = "newest", start: int = 0, size: int = 25
     ):
         sorting = sorting.lower().replace("top", "vote")
         if sorting not in ["newest", "oldest", "vote"]:
@@ -645,13 +604,13 @@ class Local(Session):
         return CommentList(req["commentList"]).CommentList
 
     def get_blog_comments(
-        self,
-        wikiId: str = None,
-        blogId: str = None,
-        quizId: str = None,
-        sorting: str = "newest",
-        size: int = 25,
-        start: int = 0,
+            self,
+            wikiId: str = None,
+            blogId: str = None,
+            quizId: str = None,
+            sorting: str = "newest",
+            size: int = 25,
+            start: int = 0,
     ):
         sorting = sorting.lower().replace("top", "vote")
         if sorting not in ["newest", "oldest", "vote"]:
@@ -690,7 +649,7 @@ class Local(Session):
         return Json(req)
 
     def get_blog_info(
-        self, blogId: str = None, wikiId: str = None, folderId: str = None
+            self, blogId: str = None, wikiId: str = None, folderId: str = None
     ):
         if blogId:
             link = f"/x{self.comId}/s/blog/{blogId}"
@@ -723,12 +682,12 @@ class Local(Session):
         return RecentBlogs(req["blogList"]).RecentBlogs
 
     def tip_coins(
-        self,
-        coins: int,
-        chatId: str = None,
-        blogId: str = None,
-        wikiId: str = None,
-        transactionId: str = None,
+            self,
+            coins: int,
+            chatId: str = None,
+            blogId: str = None,
+            wikiId: str = None,
+            transactionId: str = None,
     ):
         if transactionId is None:
             transactionId = str(UUID(hexlify(os.urandom(16)).decode("ascii")))
@@ -763,7 +722,7 @@ class Local(Session):
         return Json(req)
 
     def delete_message(
-        self, chatId: str, messageId: str, asStaff: bool = False, reason: str = None
+            self, chatId: str, messageId: str, asStaff: bool = False, reason: str = None
     ):
         data = {"adminOpName": 102, "timestamp": int(timestamp() * 1000)}
 
@@ -825,12 +784,12 @@ class Local(Session):
         return Json(req)
 
     def hide(
-        self,
-        note: str = None,
-        blogId: str = None,
-        userId: str = None,
-        wikiId: str = None,
-        chatId: str = None,
+            self,
+            note: str = None,
+            blogId: str = None,
+            userId: str = None,
+            wikiId: str = None,
+            chatId: str = None,
     ):
         data = {
             "adminOpName": 18 if userId else 110,
@@ -855,12 +814,12 @@ class Local(Session):
         return Json(req)
 
     def unhide(
-        self,
-        note: str = None,
-        blogId: str = None,
-        userId: str = None,
-        wikiId: str = None,
-        chatId: str = None,
+            self,
+            note: str = None,
+            blogId: str = None,
+            userId: str = None,
+            wikiId: str = None,
+            chatId: str = None,
     ):
         data = {
             "adminOpName": 19 if userId else 110,
@@ -923,13 +882,13 @@ class Local(Session):
         return Json(req)
 
     def post_wiki(
-        self,
-        title: str,
-        content: str,
-        fansOnly: bool = False,
-        icon: str = None,
-        backgroundColor: str = None,
-        keywords: Union[str, list] = None,
+            self,
+            title: str,
+            content: str,
+            fansOnly: bool = False,
+            icon: str = None,
+            backgroundColor: str = None,
+            keywords: Union[str, list] = None,
     ):
         data = {
             "extensions": {
@@ -994,15 +953,25 @@ class Local(Session):
         req = self.postRequest(f"/x{self.comId}/s/knowledge-base-request", data)
         return Json(req)
 
+    def approve_wiki(self, wikiId: str):
+        data = {
+            "destinationCategoryIdList": [],
+            "actionType": "create",
+            "timestamp": int(timestamp() * 1000),
+        }
+
+        req = self.postRequest(f"/x{self.comId}/s/knowledge-base-request/{wikiId}/approve", data)
+        return Json(req)
+
     def edit_blog(
-        self,
-        title: str,
-        content: str,
-        blogId: str = None,
-        wikiId: str = None,
-        fansOnly: bool = False,
-        backgroundColor: str = None,
-        media: list = None,
+            self,
+            title: str,
+            content: str,
+            blogId: str = None,
+            wikiId: str = None,
+            fansOnly: bool = False,
+            backgroundColor: str = None,
+            media: list = None,
     ):
         data = {
             "title": title,
@@ -1013,15 +982,13 @@ class Local(Session):
             "extensions": {}
         }
 
-
         if media:
             data["mediaList"] = [[100, media, None, "XYZ", None, {"fileName": "Amino"}]]
         if fansOnly:
             data["extensions"]["fansOnly"] = True
         if backgroundColor:
-            data["extensions"]["style"]  = {"backgroundColor": backgroundColor}
+            data["extensions"]["style"] = {"backgroundColor": backgroundColor}
             data["extensions"]["style"] = {"backgroundMediaList": []}
-
 
         if blogId:
             link = f"/x{self.comId}/s/blog/{blogId}"
@@ -1083,12 +1050,12 @@ class Local(Session):
         return Json(req)
 
     def flag(
-        self,
-        reason: str,
-        flagType: str = "spam",
-        userId: str = None,
-        wikiId: str = None,
-        blogId: str = None,
+            self,
+            reason: str,
+            flagType: str = "spam",
+            userId: str = None,
+            wikiId: str = None,
+            blogId: str = None,
     ):
         types = {
             "violence": 106,
@@ -1136,6 +1103,9 @@ class Local(Session):
         return Json(req)
 
     def transfer_host(self, chatId: str, userIds: list):
+        if isinstance(userIds, str):
+            userIds = [userIds]
+
         data = {"uidList": userIds, "timestamp": int(timestamp() * 1000)}
         req = self.postRequest(
             f"/x{self.comId}/s/chat/thread/{chatId}/transfer-organizer", data
@@ -1182,6 +1152,28 @@ class Local(Session):
         req = self.postRequest(f"/x{self.comId}/s/blog/{quizId}/quiz/result", data)
         return req
 
+    def add_sticker(self, icon: str):
+        data = {
+            "icon": icon,
+            "timestamp": int(timestamp() * 1000),
+        }
+        req = self.postRequest(f"/x{self.comId}/s/sticker-collection/6c016531-6594-4c5b-8bb5-f0409c0e8286/stickers",
+                               data)
+        return req
+
+    def add_stickers(self):
+        data = {
+            "collectionType": 3,
+            "description": "_(guideline.content_v2)_",
+            "iconSourceStickerIndex": 0,
+            "name": "_(guideline.content_v2)_",
+            "stickerList": [{"name": "_(guideline.content_v2)_",
+                             "icon": "http://st1.narvii.com/8942/e7989c150be9e7e73cc45756016585c7345ec9e9r6-204-256_00.jpeg"}],
+            "timestamp": int(timestamp() * 1000),
+        }
+        req = self.postRequest(f"/x{self.comId}/s/sticker-collection/4bc84388-142b-4024-ac99-abfa2242c153", data)
+        return req
+
     def get_quiz_rankings(self, quizId: str, start: int = 0, size: int = 25):
         req = self.getRequest(
             f"/x{self.comId}/s/blog/{quizId}/quiz/result?start={start}&size={size}"
@@ -1207,7 +1199,7 @@ class Local(Session):
         return NotificationList(req).NotificationList
 
     def get_notices(
-        self, start: int = 0, size: int = 25, noticeType: str = "usersV2", status: int = 1
+            self, start: int = 0, size: int = 25, noticeType: str = "usersV2", status: int = 1
     ):
         req = self.getRequest(
             f"/x{self.comId}/s/notice?type={noticeType}&status={status}&start={start}&size={size}"
@@ -1239,12 +1231,12 @@ class Local(Session):
         return RecentBlogs(req["BlogList"]).RecentBlogs
 
     def publish_to_featured(
-        self,
-        time: int,
-        userId: str = None,
-        chatId: str = None,
-        blogId: str = None,
-        wikiId: str = None,
+            self,
+            time: int,
+            userId: str = None,
+            chatId: str = None,
+            blogId: str = None,
+            wikiId: str = None,
     ):
         time = (
             {1: 3600, 2: 7200, 3: 10800}.get(time)
@@ -1274,11 +1266,11 @@ class Local(Session):
         return Json(req)
 
     def remove_from_featured(
-        self,
-        userId: str = None,
-        chatId: str = None,
-        blogId: str = None,
-        wikiId: str = None,
+            self,
+            userId: str = None,
+            chatId: str = None,
+            blogId: str = None,
+            wikiId: str = None,
     ):
         data = {
             "adminOpName": 114,
