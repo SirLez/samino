@@ -489,13 +489,10 @@ class Local(Session):
             wikiId: str = None,
             replyTo: str = None,
             isGuest: bool = False,
+            icon: str = None,
     ):
         data = {
             "content": comment,
-            "mediaList": [
-                [100, "http://pm1.aminoapps.com/8942/d13bb2c101efa029a47d3ff8f0dcf5bd4f4c3e45r1-108-108v2_00", None,
-                 None, None, 1]
-            ],
             "stickerId": None,
             "type": 0,
             "eventSource": "PostDetailView",
@@ -508,6 +505,12 @@ class Local(Session):
             comType = "g-comment"
         else:
             comType = "comment"
+
+        if icon:
+            data["mediaList"] = [
+                [100, icon, None,
+                 None, None, 1]
+            ]
 
         if userId:
             link = f"/x{self.comId}/s/user-profile/{userId}/{comType}"
@@ -843,10 +846,10 @@ class Local(Session):
         req = self.postRequest(link, data)
         return Json(req)
 
-    def send_warning(self, userId: str, reason: str = None):
+    def send_warning(self, userId: str, reason: str = None, title: str = "Custom"):
         data = {
             "uid": userId,
-            "title": "Custom",
+            "title": title,
             "content": reason,
             "attachedObject": {"objectId": userId, "objectType": 0},
             "penaltyType": 0,
