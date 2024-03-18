@@ -1,5 +1,6 @@
 from time import time as timestamp
 
+from typing import BinaryIO
 from .lib.objects import *
 from .lib.sessions import Session
 
@@ -10,6 +11,13 @@ class Acm(Session):
         self.proxies = proxies
 
         Session.__init__(self, proxies=self.proxies)
+
+    def upload_theme_pack(self, file: BinaryIO):
+        data = file.read()
+        newHeaders = {"content-type": "application/octet-stream", "content-length": str(len(data))}
+
+        req = self.postRequest(f"/x{self.comId}/s/media/upload/target/community-theme-pack", data=data, newHeaders=newHeaders)
+        return req["mediaValue"]
 
     def promote(self, userId: str, rank: str):
         rank = rank.lower().replace("agent", "transfer-agent")
