@@ -1155,28 +1155,6 @@ class Local(Session):
         req = self.postRequest(f"/x{self.comId}/s/blog/{quizId}/quiz/result", data)
         return req
 
-    def add_sticker(self, icon: str):
-        data = {
-            "icon": icon,
-            "timestamp": int(timestamp() * 1000),
-        }
-        req = self.postRequest(f"/x{self.comId}/s/sticker-collection/6c016531-6594-4c5b-8bb5-f0409c0e8286/stickers",
-                               data)
-        return req
-
-    def add_stickers(self):
-        data = {
-            "collectionType": 3,
-            "description": "_(guideline.content_v2)_",
-            "iconSourceStickerIndex": 0,
-            "name": "_(guideline.content_v2)_",
-            "stickerList": [{"name": "_(guideline.content_v2)_",
-                             "icon": "http://st1.narvii.com/8942/e7989c150be9e7e73cc45756016585c7345ec9e9r6-204-256_00.jpeg"}],
-            "timestamp": int(timestamp() * 1000),
-        }
-        req = self.postRequest(f"/x{self.comId}/s/sticker-collection/4bc84388-142b-4024-ac99-abfa2242c153", data)
-        return req
-
     def get_quiz_rankings(self, quizId: str, start: int = 0, size: int = 25):
         req = self.getRequest(
             f"/x{self.comId}/s/blog/{quizId}/quiz/result?start={start}&size={size}"
