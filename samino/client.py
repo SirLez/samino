@@ -7,6 +7,7 @@ from typing import BinaryIO, Union
 from uuid import UUID
 
 from .lib.objects import *
+from .lib import headers, util
 from .lib.sessions import Session
 from .sockets import Wss
 
@@ -43,7 +44,8 @@ class Client(Wss, Session):
         """
         self.trace = trace
         self.proxies = proxies
-        self.deviceId = deviceId
+        self.deviceId = deviceId if deviceId else util.generateDevice()
+        headers.staticDevice = self.deviceId
 
         Wss.__init__(
             self, self,
