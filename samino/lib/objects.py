@@ -671,7 +671,7 @@ class RecentBlogs:
         try: self.prevPageToken = self.json["paging"]["prevPageToken"]
         except (KeyError, TypeError): pass
 
-        return BlogList(self.json["blogList"], self.nextPageToken, self.prevPageToken).BlogList
+        return BlogList(self.json["blogList"] if "blogList" in self.json else self.json, self.nextPageToken, self.prevPageToken).BlogList
 
 class BlogCategoryList:
     def __init__(self, data):
@@ -4321,73 +4321,68 @@ class StoreStickers:
 class Login:
     def __init__(self, data):
         self.json = data
-        self.uid = data["auid"]
-        self.sid = data["sid"]
-        self.nickname = data["account"]["nickname"]
-        self.aminoId = data["account"]["aminoId"]
+        self.uid = data.get("auid")
+        self.sid = data.get("sid")
+        account_info = data.get("account", {})
+        self.nickname = account_info.get("nickname")
+        self.amino_id = account_info.get("aminoId")
+
 
 class Json:
     def __init__(self, data):
+        self.json_data = data
+        self.message = data.get("api:message")
+        self.status_code = data.get("api:statuscode")
+        self.duration = data.get("api:duration")
+        self.timestamp = data.get("api:timestamp")
+
+
+class Achievements:
+    def __init__(self, data):
         self.json = data
-        try:
-            self.message = data["api:message"]
-            self.statusCode = data["api:statuscode"]
-            self.duration = data["api:duration"]
-            self.timestamp = data["api:timestamp"]
-        except (TypeError, KeyError): pass
+        self.secondsSpentOfLast24Hours = data.get("secondsSpentOfLast24Hours")
+        self.secondsSpentOfLast7Days = data.get("secondsSpentOfLast7Days")
+        self.numberOfPostsCreated = data.get("numberOfPostsCreated")
+        self.numberOfMembersCount = data.get("numberOfMembersCount")
 
 
 class ReplyMessage:
     def __init__(self, data):
-        try: self.messageId = data["messageId"]
-        except KeyError: self.messageId = None
-        try: self.content = data["content"]
-        except KeyError: self.content = None
-        try:  self.clientRefId = data["clientRefId"]
-        except KeyError: self.clientRefId = None
-        try: self.author: UserProfile = UserProfile(data["author"])
-        except KeyError: self.author = None
-        try: self.replyMessage: ReplyMessage = ReplyMessage(data["extensions"]["replyMessage"])
-        except KeyError: self.replyMessage = None
+        self.messageId = data.get("messageId")
+        self.content = data.get("content")
+        self.clientRefId = data.get("clientRefId")
+        self.author = UserProfile(data.get("author")) if "author" in data else None
+        self.replyMessage = (
+            ReplyMessage(data["extensions"]["replyMessage"])
+            if "extensions" in data and "replyMessage" in data["extensions"]
+            else None
+        )
 
 
 class BubbleTemplates:
     def __init__(self, data):
         self.json = data
-        self.templateId = []
-        self.materialUrl = []
-        self.name = []
-        for x in data:
-            try: self.templateId.append(x["templateId"])
-            except (KeyError): self.templateId.append(None)
-            try: self.materialUrl.append(x["materialUrl"])
-            except (KeyError): self.materialUrl.append(None)
-            try: self.name.append(x["name"])
-            except (KeyError): self.name.append(None)
-            try: self.config = BubbleConfig(x["config"])
-            except (KeyError): self.config = BubbleConfig({})
+        self.templateId = [x.get("templateId") for x in data]
+        self.materialUrl = [x.get("materialUrl") for x in data]
+        self.name = [x.get("name") for x in data]
+        self.config = [
+            BubbleConfig(x.get("config", {})) for x in data
+        ]
 
 
 class Account:
     def __init__(self, data):
         self.json = data
-
-        try: self.email = data["email"]
-        except (KeyError): self.email = None
-        try: self.icon = data["icon"]
-        except (KeyError): self.icon = None
-        try: self.nickname = data["nickname"]
-        except (KeyError): self.nickname = None
-        try: self.aminoId = data["aminoId"]
-        except (KeyError): self.aminoId = None
-        try: self.userId = data["uid"]
-        except (KeyError): self.userId = None
+        self.email = data.get("email")
+        self.icon = data.get("icon")
+        self.nickname = data.get("nickname")
+        self.aminoId = data.get("aminoId")
+        self.userId = data.get("uid")
 
 
 class ItemList:
     def __init__(self, data):
         self.json = data
-
         self.objectId = []
         self.imageUrl = []
         self.adCampaignId = []
@@ -4398,26 +4393,21 @@ class ItemList:
         self.adUnitId = []
         self.uiPos = []
 
+        self._populate_item_list()
+
+    def _populate_item_list(self):
+        for x in self.json:
+            self.objectId.append(x.get("objectId"))
+            self.imageUrl.append(x.get("imageUrl"))
+            self.adCampaignId.append(x.get("adCampaignId"))
+            self.deepLink.append(x.get("deepLink"))
+            self.objectType.append(x.get("objectType"))
+            strategy_info = x.get("strategyInfo", {})
+            self.scenarioType.append(strategy_info.get("scenarioType"))
+            self.reqId.append(strategy_info.get("reqId"))
+            self.uiPos.append(strategy_info.get("uiPos"))
+            self.adUnitId.append(strategy_info.get("adUnitId"))
+
     @property
     def ItemList(self):
-        for x in self.json:
-            try: self.objectId.append(x["objectId"])
-            except (KeyError, TypeError): self.objectId.append(None)
-            try: self.imageUrl.append(x["imageUrl"])
-            except (KeyError, TypeError): self.imageUrl.append(None)
-            try: self.adCampaignId.append(x["adCampaignId"])
-            except (KeyError, TypeError): self.adCampaignId.append(None)
-            try: self.deepLink.append(x["deepLink"])
-            except (KeyError, TypeError): self.deepLink.append(None)
-            try: self.objectType.append(x["objectType"])
-            except (KeyError, TypeError): self.objectType.append(None)
-            try: self.scenarioType.append(x["strategyInfo"]["scenarioType"])
-            except (KeyError, TypeError): self.scenarioType.append(None)
-            try: self.reqId.append(x["strategyInfo"]["reqId"])
-            except (KeyError, TypeError): self.reqId.append(None)
-            try: self.uiPos.append(x["strategyInfo"]["uiPos"])
-            except (KeyError, TypeError): self.reqId.append(None)
-            try: self.adUnitId.append(x["strategyInfo"]["adUnitId"])
-            except (KeyError, TypeError): self.reqId.append(None)
-
         return self
