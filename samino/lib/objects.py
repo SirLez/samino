@@ -4320,10 +4320,11 @@ class Json:
 class Achievements:
     def __init__(self, data):
         self.json = data
-        self.secondsSpentOfLast24Hours = data.get("secondsSpentOfLast24Hours")
-        self.secondsSpentOfLast7Days = data.get("secondsSpentOfLast7Days")
-        self.numberOfPostsCreated = data.get("numberOfPostsCreated")
-        self.numberOfMembersCount = data.get("numberOfMembersCount")
+        achievements = data.get("achievements", {})
+        self.secondsSpentOfLast24Hours = achievements.get("secondsSpentOfLast24Hours")
+        self.secondsSpentOfLast7Days = achievements.get("secondsSpentOfLast7Days")
+        self.numberOfPostsCreated = achievements.get("numberOfPostsCreated")
+        self.numberOfMembersCount = achievements.get("numberOfMembersCount")
 
 
 class ReplyMessage:
