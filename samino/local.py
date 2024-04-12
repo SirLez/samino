@@ -1209,7 +1209,7 @@ class Local(Session):
         req = self.getRequest(
             f"/x{self.comId}/s/feed/blog-all?pagingType=t&start={start}&size={size}"
         )
-        return RecentBlogs(req["BlogList"]).RecentBlogs
+        return RecentBlogs(req["blogList"]).RecentBlogs
 
     def publish_to_featured(
             self,
@@ -1272,3 +1272,9 @@ class Local(Session):
 
         req = self.postRequest(f"/x{self.comId}/s/{endpoint}/admin", data)
         return Json(req)
+
+    def get_achievements(self):
+        req = self.getRequest(
+            f"/x{self.comId}/s/user-profile/{self.uid}/achievements"
+        )
+        return Achievements(req)
