@@ -5,7 +5,7 @@ README = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="samino",
-    version="2.6.0",
+    version="2.6.1",
     url="https://github.com/SirLez/SAmino",
     download_url="https://github.com/SirLez/SAmino/archive/refs/heads/main.zip",
     description="Amino Bots with python!",
