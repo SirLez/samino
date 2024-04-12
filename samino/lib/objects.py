@@ -1793,26 +1793,6 @@ class WalletHistory:
 
         return self
 
-class UserAchievements:
-    def __init__(self, data):
-        self.json = data
-        self.secondsSpentOfLast24Hours = None
-        self.secondsSpentOfLast7Days = None
-        self.numberOfFollowersCount = None
-        self.numberOfPostsCreated = None
-
-    @property
-    def UserAchievements(self):
-        try: self.secondsSpentOfLast24Hours = self.json["secondsSpentOfLast24Hours"]
-        except (KeyError, TypeError): pass
-        try: self.secondsSpentOfLast7Days = self.json["secondsSpentOfLast7Days"]
-        except (KeyError, TypeError): pass
-        try: self.numberOfFollowersCount = self.json["numberOfMembersCount"]
-        except (KeyError, TypeError): pass
-        try: self.numberOfPostsCreated = self.json["numberOfPostsCreated"]
-        except (KeyError, TypeError): pass
-
-        return self
 
 class UserSavedBlogs:
     def __init__(self, data):
